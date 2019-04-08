@@ -252,6 +252,27 @@ public class UploadTool {
         return null;
     }
 
+    public void pauseAll() {
+        if (uploadTasks != null) {
+            for (int i = 0; i < uploadTasks.size(); i++) {
+                UploadTask uploadTask = uploadTasks.get(i);
+                uploadTask.pause();
+            }
+        }
+    }
+
+    public void pause(String path) {
+        if (uploadTasks != null) {
+            for (int i = 0; i < uploadTasks.size(); i++) {
+                UploadTask uploadTask = uploadTasks.get(i);
+                if (TextUtils.equals(uploadTask.getBeanInfo().getPath(), path)) {
+                    uploadTask.pause();
+                    return;
+                }
+            }
+        }
+    }
+
 
     public static final int SIZE_TOTAL = 0;
     public static final int SIZE_SUCCESS = 1;

@@ -157,6 +157,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
      * 暂停
      */
     public void pause() {
+        if (isPaused) return;
         isPaused = true;
         cancel();
     }
