@@ -25,6 +25,9 @@ public class ProgressBean {
         this.state = state;
         this.beanInfo = beanInfo;
 
+    }  public ProgressBean(  BaseBeanInfo beanInfo) {
+         this.beanInfo = beanInfo;
+
     }
 
     public int getResultCode() {

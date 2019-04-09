@@ -22,11 +22,26 @@ import retrofit2.http.Url;
  * 995637517@qq.com
  */
 
-public interface UploadService     {
+public interface UploadService {
     @Streaming
     @POST()
     @Multipart
     Call<ResponseBody> upload(@Url String url,
+                              @Part MultipartBody.Part part);
+
+    /**
+     * 断点上传
+     *
+     * @param url
+     * @param start "bytes=" + currentLength + "-"
+     * @param part
+     * @return
+     */
+    @Streaming
+    @POST()
+    @Multipart
+    Call<ResponseBody> upload(@Url String url,
+                              @Header("range") String start,
                               @Part MultipartBody.Part part);
 
     @Streaming

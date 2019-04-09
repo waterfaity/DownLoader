@@ -1,10 +1,11 @@
-package com.waterfairy.downloader.upload;
+package com.waterfairy.downloader.down;
 
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
+import com.waterfairy.downloader.upload.UploadTask;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.List;
  * @date 2019/3/25 16:35
  * @info:
  */
-public class UploadTool {
+public class DownloadTool {
 
     public static final String STR_STATE_TAG = "state";
     public static final String STR_STATE_PROGRESS = "progress";
@@ -36,7 +37,7 @@ public class UploadTool {
     private int maxNum;
     private int currentProgressNum;
 
-    public UploadTool setMaxNum(int maxNum) {
+    public DownloadTool setMaxNum(int maxNum) {
         if (maxNum > 5) maxNum = 5;
         this.maxNum = maxNum;
         return this;
@@ -48,7 +49,7 @@ public class UploadTool {
      *
      * @param medalBeans
      */
-    public UploadTool addUpload(List<BaseBeanInfo> medalBeans) {
+    public DownloadTool addUpload(List<BaseBeanInfo> medalBeans) {
         if (medalBeans != null) {
             for (int i = 0; i < medalBeans.size(); i++) {
                 addUpload(medalBeans.get(i));
@@ -62,7 +63,7 @@ public class UploadTool {
      *
      * @param beanInfo
      */
-    public UploadTool addUpload(BaseBeanInfo beanInfo) {
+    public DownloadTool addUpload(BaseBeanInfo beanInfo) {
         if (uploadTasks == null) uploadTasks = new ArrayList<>();
         if (TextUtils.isEmpty(beanInfo.getUrl()) && !TextUtils.isEmpty(beanInfo.getPath()) && new File(beanInfo.getPath()).exists()) {
             //可以下载

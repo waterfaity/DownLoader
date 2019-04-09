@@ -1,18 +1,13 @@
-package com.waterfairy.downloader.upload;
+package com.waterfairy.downloader.down;
 
 import android.os.AsyncTask;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
 import com.waterfairy.downloader.base.ProgressBean;
-import com.waterfairy.downloader.base.ProgressListener;
 import com.waterfairy.downloader.base.RetrofitRequest;
 
-import java.io.File;
 import java.io.IOException;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -23,19 +18,19 @@ import retrofit2.Response;
  * @date 2019/4/4 16:11
  * @info: 上传异步处理
  */
-public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBean> {
+public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBean> {
     private Call<ResponseBody> call;
     private BaseBeanInfo beanInfo;
-    private OnUploadListener onUploadListener;
+    private OnDownloadListener onUploadListener;
     private boolean isExecuted;//是否已经执行
     private boolean isPaused;//暂停状态
 
-    public UploadTask setOnUploadListener(OnUploadListener onUploadListener) {
+    public DownloadTask setOnUploadListener(OnDownloadListener onUploadListener) {
         this.onUploadListener = onUploadListener;
         return this;
     }
 
-    public UploadTask(BaseBeanInfo beanInfo) {
+    public DownloadTask(BaseBeanInfo beanInfo) {
         this.beanInfo = beanInfo;
     }
 
@@ -45,32 +40,34 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
 
     @Override
     protected ProgressBean doInBackground(BaseBeanInfo... beanInfos) {
-        ProgressBean progressBean = null;
+        final ProgressBean progressBean = new ProgressBean(beanInfo);
 
         beanInfo.setState(BaseBeanInfo.STATE_LOADING);
-        File file = new File(beanInfo.getPath());
-        RequestBody sourceBody = RequestBody.create(MediaType.parse("application/otcet-stream"), file);
-        UploadRequestBody uploadRequestBody = new UploadRequestBody(sourceBody, beanInfo, new ProgressListener() {
-            @Override
-            public void onProgressing(BaseBeanInfo beanInfo, long total, long current) {
-                publishProgress(new ProgressBean(ProgressBean.STATE_PROGRESS, beanInfo));
-            }
-        });
-        MultipartBody.Part filePart = MultipartBody.Part.createFormData(
-                "file",
-                file.getName(),
-                uploadRequestBody);
-        UploadService uploadService = RetrofitRequest.getInstance().getUploadRetrofit();
-        if (beanInfo.getCurrentLength() != 0) {
-            call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
-        } else {
-            call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
-        }
+
+        DownloadService downloadService = RetrofitRequest.getInstance().getDownloadRetrofit();
+        String rangeHeader = "bytes=" + beanInfo.getCurrentLength() + "-";
+
+
         try {
-            //启动下载
-            Response<ResponseBody> response = call.execute();
-            //下载结束
-            progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(response.code()).setResultData(response.body().string());
+            call = downloadService.download(rangeHeader, beanInfo.getUrl());
+            Response<ResponseBody> execute = call.execute();
+
+            new FileWriter().writeFile(new FileWriter.OnFileWriteListener() {
+                @Override
+                public void onFileWriteSuccess() {
+                    progressBean.setState(ProgressBean.STATE_RESULT).setResultCode()
+                    progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(execute.code()).setResultData(response.body().string());
+
+                }
+
+                @Override
+                public void onFileWriteError(String errMsg) {
+                    progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(execute.code()).setResultData(errMsg);
+
+                }
+            }, execute.body(), beanInfo, beanInfo.getCurrentLength(), beanInfo.getTotalLength());
+
+
         } catch (IOException e) {
             e.printStackTrace();
             //下载异常
@@ -181,7 +178,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
     }
 
 
-    public interface OnUploadListener {
+    public interface OnDownloadListener {
         void onLoadStart(BaseBeanInfo beanInfo);
 
         void onLoadProgress(BaseBeanInfo beanInfo);

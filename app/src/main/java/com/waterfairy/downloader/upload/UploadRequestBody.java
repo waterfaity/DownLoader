@@ -29,7 +29,7 @@ public class UploadRequestBody extends RequestBody {
     private RequestBody sourceBody;
 
 
-    public UploadRequestBody(RequestBody sourceBody,BaseBeanInfo beanInfo, ProgressListener progressListener) {
+    public UploadRequestBody(RequestBody sourceBody, BaseBeanInfo beanInfo, ProgressListener progressListener) {
         this.beanInfo = beanInfo;
         this.progressListener = progressListener;
         this.sourceBody = sourceBody;
@@ -88,8 +88,9 @@ public class UploadRequestBody extends RequestBody {
                 //增加当前写入的字节数
                 bytesWritten += byteCount;
                 //回调
+                beanInfo.setCurrentLength(bytesWritten);
+                beanInfo.setTotalLength(contentLength);
                 progressListener.onProgressing(beanInfo, contentLength, bytesWritten);
-
             }
         };
     }

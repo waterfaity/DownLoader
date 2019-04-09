@@ -13,8 +13,8 @@ public class BaseBeanInfo {
 
     public static final int ERROR_CODE = 10001;//执行retrofit的时候出的异常
 
-    public static final int STATE_NO = 0;
-    public static final int STATE_WAITING = 1;
+    public static final int STATE_WAITING = 0;
+    public static final int STATE_START = 1;
     public static final int STATE_LOADING = 2;
     public static final int STATE_PAUSED = 3;
     public static final int STATE_SUCCESS = 4;
