@@ -73,17 +73,17 @@ public class DownloadTool {
             }
         } else {
             if (selfUploadListener != null)
-                selfUploadListener.onUploadStart(beanInfo);
+                selfUploadListener.onDownloadStart(beanInfo);
             if (beanInfo.getState() == BaseBeanInfo.STATE_SUCCESS) {
                 beanInfo.setState(BaseBeanInfo.STATE_SUCCESS);
                 //已经上传
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadSuccess(beanInfo);
+                    selfUploadListener.onDownloadSuccess(beanInfo);
             } else {
                 beanInfo.setState(BaseBeanInfo.STATE_ERROR);
                 //失败
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadError(beanInfo);
+                    selfUploadListener.onDownloadError(beanInfo);
             }
         }
         return this;
@@ -157,7 +157,7 @@ public class DownloadTool {
                         && task.getBeanInfo().getState() != BaseBeanInfo.STATE_SUCCESS) {//下载成功
                     currentProgressNum++;
                     if (selfUploadListener != null && !callCancel)
-                        selfUploadListener.onUploadStart(task.getBeanInfo());
+                        selfUploadListener.onDownloadStart(task.getBeanInfo());
                     task.execute();
                     if (currentProgressNum >= maxNum) break;
                 }
@@ -165,7 +165,7 @@ public class DownloadTool {
         } else {
             //任务已经执行完毕
             if (onUploadListener != null)
-                onUploadListener.onUploadAll();
+                onUploadListener.onDownloadAll();
         }
     }
 
@@ -316,20 +316,20 @@ public class DownloadTool {
             @Override
             public void onLoadStart(BaseBeanInfo beanInfo) {
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadStart(beanInfo);
+                    selfUploadListener.onDownloadStart(beanInfo);
             }
 
             @Override
             public void onLoadProgress(BaseBeanInfo beanInfo) {
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploading(beanInfo);
+                    selfUploadListener.onDownloading(beanInfo);
             }
 
             @Override
             public void onLoadSuccess(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel) {
-                    selfUploadListener.onUploadSuccess(beanInfo);
+                    selfUploadListener.onDownloadSuccess(beanInfo);
                 }
                 startOrNext();
             }
@@ -338,7 +338,7 @@ public class DownloadTool {
             public void onLoadError(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadError(beanInfo);
+                    selfUploadListener.onDownloadError(beanInfo);
                 startOrNext();
             }
 
@@ -346,7 +346,7 @@ public class DownloadTool {
             public void onLoadPaused(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadPaused(beanInfo);
+                    selfUploadListener.onDownloadPaused(beanInfo);
                 startOrNext();
 
             }
@@ -412,53 +412,53 @@ public class DownloadTool {
      *
      * @param listener
      */
-    public void setUploadListener(OnDownloadListener listener) {
+    public void setDownloadListener(OnDownloadListener listener) {
         this.onUploadListener = listener;
         this.selfUploadListener = new OnDownloadListener() {
             @Override
-            public void onUploadStart(BaseBeanInfo mediaResBean) {
+            public void onDownloadStart(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_START);
                 if (onUploadListener != null) {
-                    onUploadListener.onUploadStart(mediaResBean);
+                    onUploadListener.onDownloadStart(mediaResBean);
                 }
             }
 
             @Override
-            public void onUploadSuccess(BaseBeanInfo mediaResBean) {
+            public void onDownloadSuccess(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_SUCCESS);
                 if (onUploadListener != null) {
-                    onUploadListener.onUploadSuccess(mediaResBean);
+                    onUploadListener.onDownloadSuccess(mediaResBean);
                 }
             }
 
             @Override
-            public void onUploadError(BaseBeanInfo mediaResBean) {
+            public void onDownloadError(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_ERROR);
                 if (onUploadListener != null) {
-                    onUploadListener.onUploadError(mediaResBean);
+                    onUploadListener.onDownloadError(mediaResBean);
                 }
             }
 
             @Override
-            public void onUploadAll() {
+            public void onDownloadAll() {
                 if (onUploadListener != null) {
-                    onUploadListener.onUploadAll();
+                    onUploadListener.onDownloadAll();
                 }
             }
 
             @Override
-            public void onUploadPaused(BaseBeanInfo beanInfo) {
+            public void onDownloadPaused(BaseBeanInfo beanInfo) {
                 sendIntent(beanInfo, BaseBeanInfo.STATE_PAUSED);
                 if (onUploadListener != null) {
-                    onUploadListener.onUploadPaused(beanInfo);
+                    onUploadListener.onDownloadPaused(beanInfo);
                 }
             }
 
             @Override
-            public void onUploading(BaseBeanInfo mediaResBean) {
+            public void onDownloading(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_LOADING, (int) (100 * mediaResBean.getCurrentLength() / (float) mediaResBean.getTotalLength()));
                 if (onUploadListener != null) {
-                    onUploadListener.onUploading(mediaResBean);
+                    onUploadListener.onDownloading(mediaResBean);
                 }
             }
         };
@@ -474,38 +474,38 @@ public class DownloadTool {
          *
          * @param mediaResBean
          */
-        void onUploadStart(BaseBeanInfo mediaResBean);
+        void onDownloadStart(BaseBeanInfo mediaResBean);
 
         /**
-         * 上传进度
+         * 进度
          *
          * @param mediaResBean
          */
-        void onUploading(BaseBeanInfo mediaResBean);
+        void onDownloading(BaseBeanInfo mediaResBean);
 
         /**
          * 暂停
          *
          * @param beanInfo
          */
-        void onUploadPaused(BaseBeanInfo beanInfo);
+        void onDownloadPaused(BaseBeanInfo beanInfo);
 
         /**
          * @param mediaResBean
          * @return
          */
-        void onUploadSuccess(BaseBeanInfo mediaResBean);
+        void onDownloadSuccess(BaseBeanInfo mediaResBean);
 
         /**
-         * 上传失败
+         * 失败
          *
          * @param mediaResBean
          */
-        void onUploadError(BaseBeanInfo mediaResBean);
+        void onDownloadError(BaseBeanInfo mediaResBean);
 
         /**
-         * 上传完成(包涵失败/暂停/成功)
+         * 完成(包涵失败/暂停/成功)
          */
-        void onUploadAll();
+        void onDownloadAll();
     }
 }
