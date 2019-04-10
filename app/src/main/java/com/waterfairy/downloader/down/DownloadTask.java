@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
 import com.waterfairy.downloader.base.ProgressBean;
+import com.waterfairy.downloader.base.ProgressListener;
 import com.waterfairy.downloader.base.RetrofitRequest;
 
 import java.io.IOException;
@@ -43,38 +44,43 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
         final ProgressBean progressBean = new ProgressBean(beanInfo);
 
         beanInfo.setState(BaseBeanInfo.STATE_LOADING);
+        DownloadService downloadService = RetrofitRequest.getInstance().getDownloadRetrofit(beanInfo, new ProgressListener() {
+            @Override
+            public void onProgressing(BaseBeanInfo beanInfo, long total, long current) {
 
-        DownloadService downloadService = RetrofitRequest.getInstance().getDownloadRetrofit();
+                publishProgress(new ProgressBean(ProgressBean.STATE_PROGRESS, beanInfo));
+            }
+        });
         String rangeHeader = "bytes=" + beanInfo.getCurrentLength() + "-";
-
-
+        boolean success = true;
+        String msg = null;
         try {
             call = downloadService.download(rangeHeader, beanInfo.getUrl());
             Response<ResponseBody> execute = call.execute();
-
-            new FileWriter().writeFile(new FileWriter.OnFileWriteListener() {
-                @Override
-                public void onFileWriteSuccess() {
-                    progressBean.setState(ProgressBean.STATE_RESULT).setResultCode()
-                    progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(execute.code()).setResultData(response.body().string());
-
+            int code = execute.code();
+            if (code != 404) {
+                FileWriter.ResultBean resultBean = new FileWriter().write(execute.body(), beanInfo.getPath(), beanInfo.getCurrentLength(), beanInfo.getTotalLength());
+                if (success = resultBean.isSuccess()) {
+                    //成功
+                    progressBean.setState(ProgressBean.STATE_RESULT).setResultCode(code);
+                } else {
+                    msg = resultBean.getMsg();
                 }
-
-                @Override
-                public void onFileWriteError(String errMsg) {
-                    progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(execute.code()).setResultData(errMsg);
-
-                }
-            }, execute.body(), beanInfo, beanInfo.getCurrentLength(), beanInfo.getTotalLength());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            //下载异常
-            if (isPaused) {
-                progressBean = new ProgressBean(ProgressBean.STATE_PAUSED, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("暂停下载");
             } else {
-                progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("未知异常");
+                success = false;
+                msg = "url 404";
+            }
+        } catch (IOException e) {
+            success = false;
+            e.printStackTrace();
+            msg = "request error";
+        }
+        //下载异常
+        if (!success) {
+            if (isPaused) {
+                progressBean.setState(ProgressBean.STATE_PAUSED).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("暂停下载");
+            } else {
+                progressBean.setState(ProgressBean.STATE_RESULT).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData(msg);
             }
         }
         return progressBean;
@@ -87,18 +93,19 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
 
         if (onUploadListener != null) {
             //下载结束
-            if (progressBean.getResultCode() != 200) {
+            if (progressBean.getResultCode() != 206) {
                 //下载失败  1:暂停;2:失败
                 if (progressBean.getState() == ProgressBean.STATE_PAUSED) {
                     progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_PAUSED);
                     onUploadListener.onLoadPaused(beanInfo);
                 } else {
+                    beanInfo.setErrMsg(progressBean.getResultData());
                     progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_LOADING);
-                    onUploadListener.onLoadError(beanInfo, progressBean.getResultData());
+                    onUploadListener.onLoadError(beanInfo);
                 }
             } else {
                 //下载成功
-                progressBean.getBeanInfo().setUrlIfNotNull(onUploadListener.onLoadSuccess(beanInfo, progressBean.getResultData()));
+                onUploadListener.onLoadSuccess(beanInfo);
             }
         }
     }
@@ -184,17 +191,13 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
         void onLoadProgress(BaseBeanInfo beanInfo);
 
         /**
-         * 需要解析后返回url
-         *
          * @param beanInfo
-         * @param jsonResult
          * @return
          */
-        String onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult);
+        void onLoadSuccess(BaseBeanInfo beanInfo);
 
-        void onLoadError(BaseBeanInfo beanInfo, String resultData);
+        void onLoadError(BaseBeanInfo beanInfo);
 
         void onLoadPaused(BaseBeanInfo beanInfo);
     }
-
 }

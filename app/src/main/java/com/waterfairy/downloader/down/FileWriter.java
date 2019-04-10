@@ -1,6 +1,7 @@
 package com.waterfairy.downloader.down;
 
-import com.waterfairy.downloader.base.BaseBeanInfo;
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,87 +13,126 @@ import java.nio.channels.FileChannel;
 import okhttp3.ResponseBody;
 
 /**
- * Created by shui on 2017/5/6.
+ * @author water_fairy
+ * @email 995637517@qq.com
+ * @date 2019/4/10 10:04
+ * @info:
  */
-
 public class FileWriter {
 
-    /**
-     * 文件存储
-     *
-     * @param fileWriteListener
-     * @param responseBody
-     * @param info
-     */
-    public void writeFile(OnFileWriteListener fileWriteListener, ResponseBody responseBody, BaseBeanInfo info, long currentLength, long totalLength) {
-        if (responseBody == null) {
-            fileWriteListener.onFileWriteError("responseBody = null");
-            return;
-        }
-        File file = new File(info.getPath());
-        if (canSave(file)) {
-            boolean success = true;
-            String errMsg = null;
+    private static final String TAG = "fileWrite";
 
-            FileChannel channelOut = null;
+    public ResultBean write(ResponseBody responseBody, String saveFilePath, long currentLength, long totalLength) {
+        boolean success = true;
+        String msg = "";
+        //判断responseBody
+        if (success = responseBody != null) {
             if (totalLength == 0) totalLength = responseBody.contentLength();
-            MappedByteBuffer mappedByteBuffer = null;
-            RandomAccessFile randomAccessFile = null;
-            try {
-                randomAccessFile = new RandomAccessFile(file, "rw");
-                channelOut = randomAccessFile.getChannel();
-                mappedByteBuffer = channelOut.map(FileChannel.MapMode.READ_WRITE, currentLength, totalLength - currentLength);
-            } catch (IOException e) {
-                e.printStackTrace();
-                errMsg = "本地文件文件错误";
-                success = false;
-            }
+            if (success = totalLength != 0) {
+                //判断 路径为空
+                if (success = !TextUtils.isEmpty(saveFilePath)) {
+                    File saveFile = new File(saveFilePath);
+                    //判断文件存在
+                    if (success = createFile(saveFile)) {
 
-            if (success) {
-                //写入文件
-                byte[] buffer = new byte[1024 * 512];
-                int len;
-                int record = 0;
-
-                //网络读取流
-                try {
-                    while ((len = responseBody.byteStream().read(buffer)) != -1) {
-                        mappedByteBuffer.put(buffer, 0, len);
-                        record += len;
+                        //创建randomAccessFile
+                        RandomAccessFile randomAccessFile = null;
+                        MappedByteBuffer mappedByteBuffer = null;
+                        FileChannel channel = null;
+                        try {
+                            randomAccessFile = new RandomAccessFile(saveFile, "rw");
+                            channel = randomAccessFile.getChannel();
+                            mappedByteBuffer = channel.map(FileChannel.MapMode.READ_WRITE, currentLength, totalLength - currentLength);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                            success = false;
+                            msg = "file not found";
+                        } catch (IOException e) {
+                            success = false;
+                            e.printStackTrace();
+                            msg = "file  random write error";
+                        }
+                        //创建 randomAccessFile 成功
+                        if (success) {
+                            int length = 0;
+                            byte[] readBytes = new byte[1024 * 512];
+                            try {
+                                long total = 0;
+                                while ((length = responseBody.byteStream().read(readBytes)) != -1) {
+                                    total++;
+                                    mappedByteBuffer.put(readBytes, 0, length);
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                success = false;
+                                //网络断开 不稳定 手动取消
+                                msg = "stream read error";
+                            }
+                            try {
+                                responseBody.byteStream().close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                if (success) {
+                                    success = false;
+                                    msg = "responseBody stream close error";
+                                }
+                            }
+                            try {
+                                channel.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                if (success) {
+                                    success = false;
+                                    msg = "randomAccessFile channel stream close error";
+                                }
+                            }
+                            try {
+                                randomAccessFile.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                if (success) {
+                                    success = false;
+                                    msg = "randomAccessFile stream close error";
+                                }
+                            }
+                        }
+                    } else {
+                        msg = "file create failed";
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    errMsg = "文件流读取失败";
-                    success = false;
-                }
-                if (success) {
-                    //写入文件
-                    try {
-                        responseBody.byteStream().close();
-                    } catch (IOException e) {
-                        success = false;
-                        e.printStackTrace();
-                        errMsg = "文件流写入失败";
-                    }
-                }
-                //刷新流
-                if (success) {
-                    try {
-                        channelOut.close();
-                        randomAccessFile.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        success = false;
-                    }
-                }
-                if (success) {
-                    fileWriteListener.onFileWriteSuccess();
                 } else {
-                    fileWriteListener.onFileWriteError(errMsg);
+                    msg = "file path is null";
                 }
+            } else {
+                msg = "contentLength = 0";
             }
         } else {
-            fileWriteListener.onFileWriteError("文件创建失败");
+            msg = "responseBody =  null";
+        }
+        ResultBean resultBean = new ResultBean();
+        resultBean.msg = msg;
+        resultBean.success = success;
+        return resultBean;
+    }
+
+
+    public static class ResultBean {
+        private String msg;
+        private boolean success;
+
+        public String getMsg() {
+            return msg;
+        }
+
+        public void setMsg(String msg) {
+            this.msg = msg;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
         }
     }
 
@@ -102,7 +142,7 @@ public class FileWriter {
      * @param file
      * @return
      */
-    private boolean canSave(File file) {
+    private boolean createFile(File file) {
         boolean canSave = false;
         if (file.exists()) {
             canSave = true;
@@ -124,9 +164,4 @@ public class FileWriter {
         return canSave;
     }
 
-    public interface OnFileWriteListener {
-        void onFileWriteSuccess();
-
-        void onFileWriteError(String errMsg);
-    }
 }

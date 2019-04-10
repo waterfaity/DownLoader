@@ -1,6 +1,7 @@
 package com.waterfairy.downloader.base;
 
 
+import com.waterfairy.downloader.down.DownloadInterceptor;
 import com.waterfairy.downloader.down.DownloadService;
 import com.waterfairy.downloader.upload.UploadService;
 
@@ -35,23 +36,22 @@ public class RetrofitRequest {
 
     public UploadService getUploadRetrofit() {
         if (uploadRetrofitService == null) {
-            uploadRetrofitService = buildClient().create(UploadService.class);
+            uploadRetrofitService = buildClient(null).create(UploadService.class);
         }
         return uploadRetrofitService;
     }
 
-    public DownloadService getDownloadRetrofit() {
-        if (downloadRetrofitService == null) {
-            downloadRetrofitService = buildClient().create(DownloadService.class);
-        }
+    public DownloadService getDownloadRetrofit(BaseBeanInfo beanInfo, ProgressListener progressListener) {
+        downloadRetrofitService = buildClient(new DownloadInterceptor(beanInfo, progressListener)).create(DownloadService.class);
         return downloadRetrofitService;
     }
 
-    private Retrofit buildClient() {
+    private Retrofit buildClient(DownloadInterceptor downloadInterceptor) {
         OkHttpClient.Builder okHttpClient = new OkHttpClient().newBuilder();
-        OkHttpClient httpClient = okHttpClient.build();
-        okHttpClient.connectTimeout(1500, TimeUnit.MILLISECONDS);
-        okHttpClient.readTimeout(1500, TimeUnit.MILLISECONDS);
-        return new Retrofit.Builder().baseUrl(baseUrl).client(httpClient).build();
+        okHttpClient.connectTimeout(15000, TimeUnit.MILLISECONDS);
+        okHttpClient.readTimeout(15000, TimeUnit.MILLISECONDS);
+        if (downloadInterceptor != null)
+            okHttpClient.addInterceptor(downloadInterceptor);
+        return new Retrofit.Builder().baseUrl(baseUrl).client(okHttpClient.build()).build();
     }
 }

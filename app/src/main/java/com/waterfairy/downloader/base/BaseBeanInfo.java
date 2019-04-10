@@ -22,7 +22,16 @@ public class BaseBeanInfo {
 
 
     private Object object;
+    private String errMsg;
     private int state;
+
+    public String getErrMsg() {
+        return errMsg;
+    }
+
+    public void setErrMsg(String errMsg) {
+        this.errMsg = errMsg;
+    }
 
     public Object getObject() {
         return object;
@@ -104,7 +113,8 @@ public class BaseBeanInfo {
     }
 
     public BaseBeanInfo setTotalLength(long totalLength) {
-        this.totalLength = totalLength;
+        if (this.totalLength == 0)
+            this.totalLength = totalLength;
         return this;
     }
 

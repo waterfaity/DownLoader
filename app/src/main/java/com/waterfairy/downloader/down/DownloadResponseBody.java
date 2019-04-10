@@ -26,11 +26,21 @@ public class DownloadResponseBody extends ResponseBody {
     private BaseBeanInfo beanInfo;
     private long totalLen;
 
-    public DownloadResponseBody(ResponseBody responseBody, BaseBeanInfo beanInfo,int responseCode, ProgressListener progressListener) {
+    public DownloadResponseBody(ResponseBody responseBody, BaseBeanInfo beanInfo, int responseCode, ProgressListener progressListener) {
         this.responseBody = responseBody;
         this.beanInfo = beanInfo;
         this.progressListener = progressListener;
         this.responseCode = responseCode;
+    }
+
+    public DownloadResponseBody(ResponseBody responseBody, int responseCode, ProgressListener progressListener) {
+        this.responseBody = responseBody;
+        this.progressListener = progressListener;
+        this.responseCode = responseCode;
+    }
+
+    public void setBeanInfo(BaseBeanInfo beanInfo) {
+        this.beanInfo = beanInfo;
     }
 
     @Override
@@ -53,17 +63,17 @@ public class DownloadResponseBody extends ResponseBody {
 
     private Source source(BufferedSource source) {
         return new ForwardingSource(source) {
-            long readTotal = 0l;
+//            long readTotal = 0l;
 
             @Override
             public long read(Buffer sink, long byteCount) throws IOException {
                 if (responseCode != 404) {
                     long bytesRead = super.read(sink, byteCount);
-                    readTotal += bytesRead != -1 ? bytesRead : 0;
-                    if (null != progressListener){
-                        beanInfo.setCurrentLength(readTotal);
+//                    readTotal += bytesRead != -1 ? bytesRead : 0;
+                    if (null != progressListener) {
+                        beanInfo.setCurrentLength(beanInfo.getCurrentLength() + (bytesRead != -1 ? bytesRead : 0));
                         beanInfo.setTotalLength(contentLength());
-                        progressListener.onProgressing(beanInfo, contentLength(), readTotal);
+                        progressListener.onProgressing(beanInfo, contentLength(), beanInfo.getCurrentLength());
                     }
                     return bytesRead;
                 } else {

@@ -24,7 +24,6 @@ public class UploadTool {
     private List<UploadTask> uploadTasks;//上传任务
     private OnUploadListener selfUploadListener;//监听
     private boolean callCancel;//是否调用取消
-
     private Context context;
     private OnUploadListener onUploadListener;
 
@@ -234,7 +233,7 @@ public class UploadTool {
      * @param filePath
      * @return
      */
-    private UploadTask getUploadTask(String filePath) {
+    public UploadTask getUploadTask(String filePath) {
         if (uploadTasks != null && uploadTasks.size() > 0) {
             for (int i = 0; i < uploadTasks.size(); i++) {
                 UploadTask uploadTask = uploadTasks.get(i);
@@ -243,6 +242,10 @@ public class UploadTool {
             }
         }
         return null;
+    }
+
+    public List<UploadTask> getUploadTasks() {
+        return uploadTasks;
     }
 
     /**

@@ -3,9 +3,9 @@ package com.waterfairy.downloader.down;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
-import com.waterfairy.downloader.upload.UploadTask;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -22,12 +22,12 @@ public class DownloadTool {
     public static final String STR_STATE_TAG = "state";
     public static final String STR_STATE_PROGRESS = "progress";
 
-    private List<UploadTask> uploadTasks;//上传任务
-    private OnUploadListener selfUploadListener;//监听
+    private List<DownloadTask> uploadTasks;//上传任务
+    private OnDownloadListener selfUploadListener;//监听
     private boolean callCancel;//是否调用取消
 
     private Context context;
-    private OnUploadListener onUploadListener;
+    private OnDownloadListener onUploadListener;
 
     public void setContext(Context context) {
         this.context = context;
@@ -49,10 +49,10 @@ public class DownloadTool {
      *
      * @param medalBeans
      */
-    public DownloadTool addUpload(List<BaseBeanInfo> medalBeans) {
+    public DownloadTool addDownload(List<BaseBeanInfo> medalBeans) {
         if (medalBeans != null) {
             for (int i = 0; i < medalBeans.size(); i++) {
-                addUpload(medalBeans.get(i));
+                addDownload(medalBeans.get(i));
             }
         }
         return this;
@@ -63,23 +63,24 @@ public class DownloadTool {
      *
      * @param beanInfo
      */
-    public DownloadTool addUpload(BaseBeanInfo beanInfo) {
+    public DownloadTool addDownload(BaseBeanInfo beanInfo) {
         if (uploadTasks == null) uploadTasks = new ArrayList<>();
-        if (TextUtils.isEmpty(beanInfo.getUrl()) && !TextUtils.isEmpty(beanInfo.getPath()) && new File(beanInfo.getPath()).exists()) {
+
+        if (!TextUtils.isEmpty(beanInfo.getUrl()) && beanInfo.getState() != BaseBeanInfo.STATE_SUCCESS) {
             //可以下载
             //判断任务中是否已经存在
-            UploadTask uploadTask = checkExist(beanInfo.getPath());
+            DownloadTask uploadTask = checkExist(beanInfo.getUrl());
             if (uploadTask == null) {
-                uploadTasks.add(new UploadTask(beanInfo).setOnUploadListener(getUploadOneListener()));
+                uploadTasks.add(new DownloadTask(beanInfo).setOnUploadListener(getUploadOneListener()));
             }
         } else {
             if (selfUploadListener != null)
                 selfUploadListener.onUploadStart(beanInfo);
-            if (!TextUtils.isEmpty(beanInfo.getUrl())) {
+            if (beanInfo.getState() == BaseBeanInfo.STATE_SUCCESS) {
                 beanInfo.setState(BaseBeanInfo.STATE_SUCCESS);
                 //已经上传
                 if (selfUploadListener != null && !callCancel)
-                    selfUploadListener.onUploadSuccess(beanInfo, null);
+                    selfUploadListener.onUploadSuccess(beanInfo);
             } else {
                 beanInfo.setState(BaseBeanInfo.STATE_ERROR);
                 //失败
@@ -101,10 +102,10 @@ public class DownloadTool {
     /**
      * 已经存在的任务或执行过的任务 且状体为暂停/错误的请求
      *
-     * @param filePath
+     * @param url
      */
-    public void restart(String filePath) {
-        restart(false, filePath);
+    public void restart(String url) {
+        restart(false, url);
     }
 
     /**
@@ -114,16 +115,16 @@ public class DownloadTool {
         restart(true, null);
     }
 
-    public void restart(boolean all, String filePath) {
+    public void restart(boolean all, String url) {
         boolean needReStart = false;
         if (uploadTasks != null && uploadTasks.size() > 0) {
             for (int i = 0; i < uploadTasks.size(); i++) {
-                UploadTask uploadTask = uploadTasks.get(i);
-                if (all || TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath)) {
+                DownloadTask uploadTask = uploadTasks.get(i);
+                if (all || TextUtils.equals(uploadTask.getBeanInfo().getUrl(), url)) {
                     if (uploadTask.getBeanInfo().getState() == BaseBeanInfo.STATE_PAUSED || uploadTask.getBeanInfo().getState() == BaseBeanInfo.STATE_ERROR) {
                         uploadTask.getBeanInfo().setState(BaseBeanInfo.STATE_WAITING);
                         uploadTasks.remove(i);
-                        uploadTask = new UploadTask(uploadTask.getBeanInfo()).setOnUploadListener(getUploadOneListener());
+                        uploadTask = new DownloadTask(uploadTask.getBeanInfo()).setOnUploadListener(getUploadOneListener());
                         uploadTasks.add(i, uploadTask);
                         sendIntent(uploadTask.getBeanInfo(), BaseBeanInfo.STATE_WAITING);
                         needReStart = true;
@@ -149,11 +150,10 @@ public class DownloadTool {
         if (sizes[SIZE_TOTAL] > sizes[SIZE_SUCCESS] + sizes[SIZE_ERROR] + sizes[SIZE_PAUSED]) {
             //任务未执行完
             for (int i = 0; i < uploadTasks.size(); i++) {
-                UploadTask task = uploadTasks.get(i);
+                DownloadTask task = uploadTasks.get(i);
                 //排除以下条件
                 if (task != null//任务不为空
                         && !task.isExecuted()//任务未执行
-                        && TextUtils.isEmpty(task.getBeanInfo().getUrl())//有上传链接
                         && task.getBeanInfo().getState() != BaseBeanInfo.STATE_ERROR//下载失败
                         && task.getBeanInfo().getState() != BaseBeanInfo.STATE_PAUSED//下载暂停
                         && task.getBeanInfo().getState() != BaseBeanInfo.STATE_SUCCESS) {//下载成功
@@ -172,8 +172,8 @@ public class DownloadTool {
     }
 
 
-    public void pause(String path) {
-        executePause(false, path);
+    public void pause(String url) {
+        executePause(false, url);
     }
 
     /**
@@ -187,15 +187,15 @@ public class DownloadTool {
      * 执行暂停
      *
      * @param pauseAll
-     * @param filePath
+     * @param url
      */
-    private void executePause(boolean pauseAll, String filePath) {
+    private void executePause(boolean pauseAll, String url) {
         if (uploadTasks != null) {
             for (int i = 0; i < uploadTasks.size(); i++) {
-                UploadTask uploadTask = uploadTasks.get(i);
+                DownloadTask uploadTask = uploadTasks.get(i);
                 BaseBeanInfo beanInfo = uploadTask.getBeanInfo();
                 //全部暂停 或 符合条件的任务  执行暂停
-                boolean pause = pauseAll || (TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath));
+                boolean pause = pauseAll || (TextUtils.equals(uploadTask.getBeanInfo().getUrl(), url));
                 //可以暂停的状态  STATE_WAITING / STATE_START / STATE_LOADING 其他状态不需要暂停  且不需要发送广播
                 if (pause && (beanInfo.getState() == BaseBeanInfo.STATE_WAITING || beanInfo.getState() == BaseBeanInfo.STATE_START || beanInfo.getState() == BaseBeanInfo.STATE_LOADING)) {
                     boolean executePause = uploadTask.pause();
@@ -215,13 +215,13 @@ public class DownloadTool {
     /**
      * 判断是否与该任务 返该任务
      *
-     * @param path
+     * @param url
      * @return
      */
-    private UploadTask checkExist(String path) {
+    private DownloadTask checkExist(String url) {
         if (uploadTasks != null) {
-            for (UploadTask task : uploadTasks) {
-                if (TextUtils.equals(task.getBeanInfo().getPath(), path))
+            for (DownloadTask task : uploadTasks) {
+                if (TextUtils.equals(task.getBeanInfo().getUrl(), url))
                     return task;
             }
         }
@@ -232,14 +232,14 @@ public class DownloadTool {
     /**
      * 获取上传任务
      *
-     * @param filePath
+     * @param url
      * @return
      */
-    private UploadTask getUploadTask(String filePath) {
+    private DownloadTask getUploadTask(String url) {
         if (uploadTasks != null && uploadTasks.size() > 0) {
             for (int i = 0; i < uploadTasks.size(); i++) {
-                UploadTask uploadTask = uploadTasks.get(i);
-                if (TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath))
+                DownloadTask uploadTask = uploadTasks.get(i);
+                if (TextUtils.equals(uploadTask.getBeanInfo().getUrl(), url))
                     return uploadTask;
             }
         }
@@ -249,11 +249,11 @@ public class DownloadTool {
     /**
      * 获取对应信息
      *
-     * @param filePath
+     * @param url
      * @return
      */
-    public BaseBeanInfo getBeanInfo(String filePath) {
-        UploadTask uploadTask = getUploadTask(filePath);
+    public BaseBeanInfo getBeanInfo(String url) {
+        DownloadTask uploadTask = getUploadTask(url);
         if (uploadTask != null) return uploadTask.getBeanInfo();
         return null;
     }
@@ -313,8 +313,8 @@ public class DownloadTool {
      *
      * @return
      */
-    private UploadTask.OnUploadListener getUploadOneListener() {
-        return new UploadTask.OnUploadListener() {
+    private DownloadTask.OnDownloadListener getUploadOneListener() {
+        return new DownloadTask.OnDownloadListener() {
             @Override
             public void onLoadStart(BaseBeanInfo beanInfo) {
                 if (selfUploadListener != null && !callCancel)
@@ -328,18 +328,16 @@ public class DownloadTool {
             }
 
             @Override
-            public String onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult) {
-                String url = null;
+            public void onLoadSuccess(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel) {
-                    url = selfUploadListener.onUploadSuccess(beanInfo, jsonResult);
+                    selfUploadListener.onUploadSuccess(beanInfo);
                 }
                 startOrNext();
-                return url;
             }
 
             @Override
-            public void onLoadError(BaseBeanInfo beanInfo, String resultData) {
+            public void onLoadError(BaseBeanInfo beanInfo  ) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadError(beanInfo);
@@ -362,7 +360,7 @@ public class DownloadTool {
      */
     private void release() {
         if (uploadTasks != null) {
-            for (UploadTask task : uploadTasks) {
+            for (DownloadTask task : uploadTasks) {
                 if (task != null) {
                     task.pause();
                 }
@@ -390,10 +388,10 @@ public class DownloadTool {
      */
     private void sendIntent(BaseBeanInfo mediaResBean, int state, int progress) {
         if (mediaResBean != null) mediaResBean.setState(state);
-        if (context == null || mediaResBean == null || TextUtils.isEmpty(mediaResBean.getPath()))
+        if (context == null || mediaResBean == null || TextUtils.isEmpty(mediaResBean.getUrl()))
             return;
         Intent intent = new Intent();
-        intent.setAction(mediaResBean.getPath());
+        intent.setAction(mediaResBean.getUrl());
         if (state == BaseBeanInfo.STATE_LOADING) {
             intent.putExtra(STR_STATE_PROGRESS, progress);
         }
@@ -416,9 +414,9 @@ public class DownloadTool {
      *
      * @param listener
      */
-    public void setUploadListener(OnUploadListener listener) {
+    public void setUploadListener(OnDownloadListener listener) {
         this.onUploadListener = listener;
-        this.selfUploadListener = new OnUploadListener() {
+        this.selfUploadListener = new OnDownloadListener() {
             @Override
             public void onUploadStart(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_START);
@@ -428,12 +426,11 @@ public class DownloadTool {
             }
 
             @Override
-            public String onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult) {
+            public void onUploadSuccess(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_SUCCESS);
                 if (onUploadListener != null) {
-                    return onUploadListener.onUploadSuccess(mediaResBean, jsonResult);
+                    onUploadListener.onUploadSuccess(mediaResBean);
                 }
-                return null;
             }
 
             @Override
@@ -472,7 +469,7 @@ public class DownloadTool {
     /**
      * 监听
      */
-    public interface OnUploadListener {
+    public interface OnDownloadListener {
 
         /**
          * 开始
@@ -496,13 +493,10 @@ public class DownloadTool {
         void onUploadPaused(BaseBeanInfo beanInfo);
 
         /**
-         * 上传成功  返回上传后的url
-         *
          * @param mediaResBean
-         * @param jsonResult
          * @return
          */
-        String onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult);
+        void onUploadSuccess(BaseBeanInfo mediaResBean);
 
         /**
          * 上传失败
