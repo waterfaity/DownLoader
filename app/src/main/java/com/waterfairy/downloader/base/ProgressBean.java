@@ -4,7 +4,7 @@ package com.waterfairy.downloader.base;
  * @author water_fairy
  * @email 995637517@qq.com
  * @date 2019/4/4 16:44
- * @info:
+ * @info: 内部使用
  */
 public class ProgressBean {
     private int state;
@@ -25,8 +25,10 @@ public class ProgressBean {
         this.state = state;
         this.beanInfo = beanInfo;
 
-    }  public ProgressBean(  BaseBeanInfo beanInfo) {
-         this.beanInfo = beanInfo;
+    }
+
+    public ProgressBean(BaseBeanInfo beanInfo) {
+        this.beanInfo = beanInfo;
 
     }
 

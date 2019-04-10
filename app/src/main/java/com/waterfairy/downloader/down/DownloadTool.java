@@ -3,11 +3,9 @@ package com.waterfairy.downloader.down;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -337,7 +335,7 @@ public class DownloadTool {
             }
 
             @Override
-            public void onLoadError(BaseBeanInfo beanInfo  ) {
+            public void onLoadError(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadError(beanInfo);

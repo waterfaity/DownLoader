@@ -1,7 +1,5 @@
 package com.waterfairy.downloader.upload;
 
-import com.waterfairy.downloader.base.IRetrofitService;
-
 import java.util.Map;
 
 import okhttp3.MultipartBody;

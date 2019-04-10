@@ -18,7 +18,6 @@ import retrofit2.Retrofit;
 public class RetrofitRequest {
     private static RetrofitRequest retrofitRequest;
     private UploadService uploadRetrofitService;
-    private DownloadService downloadRetrofitService;
     private String baseUrl;
 
     private RetrofitRequest() {
@@ -42,8 +41,7 @@ public class RetrofitRequest {
     }
 
     public DownloadService getDownloadRetrofit(BaseBeanInfo beanInfo, ProgressListener progressListener) {
-        downloadRetrofitService = buildClient(new DownloadInterceptor(beanInfo, progressListener)).create(DownloadService.class);
-        return downloadRetrofitService;
+        return buildClient(new DownloadInterceptor(beanInfo, progressListener)).create(DownloadService.class);
     }
 
     private Retrofit buildClient(DownloadInterceptor downloadInterceptor) {

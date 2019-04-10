@@ -1,7 +1,6 @@
 package com.waterfairy.downloader.down;
 
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;

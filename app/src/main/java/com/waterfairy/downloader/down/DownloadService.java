@@ -1,7 +1,5 @@
 package com.waterfairy.downloader.down;
 
-import com.waterfairy.downloader.base.IRetrofitService;
-
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
