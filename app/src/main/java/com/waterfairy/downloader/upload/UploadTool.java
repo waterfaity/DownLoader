@@ -32,7 +32,7 @@ public class UploadTool {
     }
 
 
-    private int maxNum;
+    private int maxNum = 1;
     private int currentProgressNum;
 
     public UploadTool setMaxNum(int maxNum) {

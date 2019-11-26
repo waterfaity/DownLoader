@@ -67,15 +67,15 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
 
         if (beanInfo.getCurrentLength() != 0) {
             if (paramsHashMap != null) {
-                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
-            } else {
                 call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), paramsHashMap, filePart);
+            } else {
+                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
             }
         } else {
             if (paramsHashMap != null) {
-                call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
-            } else {
                 call = uploadService.upload(beanInfo.getUploadUrl(), paramsHashMap, filePart);
+            } else {
+                call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
             }
         }
         try {
