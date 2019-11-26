@@ -9,6 +9,7 @@ import com.waterfairy.downloader.base.RetrofitRequest;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -61,10 +62,21 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
                 file.getName(),
                 uploadRequestBody);
         UploadService uploadService = RetrofitRequest.getInstance().getUploadRetrofit();
+
+        HashMap<String, String> paramsHashMap = beanInfo.getParamsHashMap();
+
         if (beanInfo.getCurrentLength() != 0) {
-            call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
+            if (paramsHashMap != null) {
+                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
+            } else {
+                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), paramsHashMap, filePart);
+            }
         } else {
-            call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
+            if (paramsHashMap != null) {
+                call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
+            } else {
+                call = uploadService.upload(beanInfo.getUploadUrl(), paramsHashMap, filePart);
+            }
         }
         try {
             //启动下载

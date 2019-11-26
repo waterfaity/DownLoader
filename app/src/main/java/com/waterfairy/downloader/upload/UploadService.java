@@ -26,6 +26,12 @@ public interface UploadService {
     @Multipart
     Call<ResponseBody> upload(@Url String url,
                               @Part MultipartBody.Part part);
+    @Streaming
+    @POST()
+    @Multipart
+    Call<ResponseBody> upload(@Url String url,
+                              @QueryMap Map<String, String> options,
+                              @Part MultipartBody.Part part);
 
     /**
      * 断点上传

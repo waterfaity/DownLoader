@@ -33,7 +33,6 @@ public class FileWriter {
                     File saveFile = new File(saveFilePath);
                     //判断文件存在
                     if (success = createFile(saveFile)) {
-
                         //创建randomAccessFile
                         RandomAccessFile randomAccessFile = null;
                         MappedByteBuffer mappedByteBuffer = null;
@@ -49,7 +48,7 @@ public class FileWriter {
                         } catch (IOException e) {
                             success = false;
                             e.printStackTrace();
-                            msg = "file  random write error";
+                            msg = "file random write error";
                         }
                         //创建 randomAccessFile 成功
                         if (success) {

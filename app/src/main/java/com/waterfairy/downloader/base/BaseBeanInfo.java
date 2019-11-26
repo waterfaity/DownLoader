@@ -2,6 +2,8 @@ package com.waterfairy.downloader.base;
 
 import android.text.TextUtils;
 
+import java.util.HashMap;
+
 /**
  * @author water_fairy
  * @email 995637517@qq.com
@@ -24,6 +26,15 @@ public class BaseBeanInfo {
     private Object object;
     private String errMsg;
     private int state;
+    private HashMap<String, String> paramsHashMap;
+
+    public HashMap<String, String> getParamsHashMap() {
+        return paramsHashMap;
+    }
+
+    public void setParamsHashMap(HashMap<String, String> paramsHashMap) {
+        this.paramsHashMap = paramsHashMap;
+    }
 
     public String getErrMsg() {
         return errMsg;
