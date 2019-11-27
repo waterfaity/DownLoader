@@ -73,6 +73,7 @@ public class BaseBeanInfo {
      * 总大小
      */
     protected long totalLength;
+
     /**
      * 当前大小
      */

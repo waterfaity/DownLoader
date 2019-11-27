@@ -22,10 +22,10 @@ public class UploadTool {
     public static final String STR_STATE_PROGRESS = "progress";
 
     private List<UploadTask> uploadTasks;//上传任务
-    private OnUploadListener selfUploadListener;//监听
+    private OnUploadInt selfUploadListener;//监听
     private boolean callCancel;//是否调用取消
     private Context context;
-    private OnUploadListener onUploadListener;
+    private OnUploadInt onUploadListener;
 
     public void setContext(Context context) {
         this.context = context;
@@ -415,9 +415,9 @@ public class UploadTool {
      *
      * @param listener
      */
-    public void setUploadListener(OnUploadListener listener) {
+    public void setUploadListener(OnUploadInt listener) {
         this.onUploadListener = listener;
-        this.selfUploadListener = new OnUploadListener() {
+        this.selfUploadListener = new OnUploadInt() {
             @Override
             public void onUploadStart(BaseBeanInfo mediaResBean) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_START);
@@ -467,10 +467,40 @@ public class UploadTool {
         };
     }
 
+
+    public static abstract class OnUploadListener implements OnUploadInt {
+
+
+        @Override
+        public void onUploadStart(BaseBeanInfo mediaResBean) {
+
+        }
+
+        @Override
+        public abstract void onUploading(BaseBeanInfo mediaResBean);
+
+        @Override
+        public void onUploadPaused(BaseBeanInfo beanInfo) {
+
+        }
+
+        @Override
+        public abstract void onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult);
+
+        @Override
+        public abstract void onUploadError(BaseBeanInfo mediaResBean);
+
+        @Override
+        public void onUploadAll() {
+
+        }
+    }
+
+
     /**
      * 监听
      */
-    public interface OnUploadListener {
+    public interface OnUploadInt {
 
         /**
          * 开始
