@@ -49,7 +49,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
         ProgressBean progressBean = null;
 
         beanInfo.setState(BaseBeanInfo.STATE_LOADING);
-        File file = new File(beanInfo.getPath());
+        File file = new File(beanInfo.getFilePath());
         RequestBody sourceBody = RequestBody.create(MediaType.parse("application/otcet-stream"), file);
         UploadRequestBody uploadRequestBody = new UploadRequestBody(sourceBody, beanInfo, new ProgressListener() {
             @Override
@@ -93,7 +93,6 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
             }
         }
         return progressBean;
-
     }
 
     @Override
@@ -113,7 +112,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
                 }
             } else {
                 //下载成功
-                progressBean.getBeanInfo().setUrlIfNotNull(onUploadListener.onLoadSuccess(beanInfo, progressBean.getResultData()));
+                onUploadListener.onLoadSuccess(beanInfo, progressBean.getResultData());
             }
         }
     }
@@ -198,14 +197,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
 
         void onLoadProgress(BaseBeanInfo beanInfo);
 
-        /**
-         * 需要解析后返回url
-         *
-         * @param beanInfo
-         * @param jsonResult
-         * @return
-         */
-        String onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult);
+        void onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult);
 
         void onLoadError(BaseBeanInfo beanInfo, String resultData);
 

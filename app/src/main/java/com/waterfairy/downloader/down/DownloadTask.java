@@ -59,7 +59,7 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
             Response<ResponseBody> execute = call.execute();
             int code = execute.code();
             if (code != 404) {
-                FileWriter.ResultBean resultBean = new FileWriter().write(execute.body(), beanInfo.getPath(), beanInfo.getCurrentLength(), beanInfo.getTotalLength());
+                FileWriter.ResultBean resultBean = new FileWriter().write(execute.body(), beanInfo.getFilePath(), beanInfo.getCurrentLength(), beanInfo.getTotalLength());
                 if (success = resultBean.isSuccess()) {
                     //成功
                     progressBean.setState(ProgressBean.STATE_RESULT).setResultCode(code);

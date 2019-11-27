@@ -67,7 +67,7 @@ public class BaseBeanInfo {
      *
      * @return
      */
-    protected String path;
+    protected String filePath;
 
     /**
      * 总大小
@@ -97,25 +97,12 @@ public class BaseBeanInfo {
         return this;
     }
 
-    /**
-     * 已经上传完的数据  再次上传
-     *
-     * @param url
-     * @return
-     */
-    public BaseBeanInfo setUrlIfNotNull(String url) {
-        if (!TextUtils.isEmpty(url)) {
-            this.url = url;
-        }
-        return this;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public BaseBeanInfo setPath(String path) {
-        this.path = path;
+    public BaseBeanInfo setFilePath(String filePath) {
+        this.filePath = filePath;
         return this;
     }
 

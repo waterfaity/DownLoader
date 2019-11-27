@@ -63,10 +63,10 @@ public class UploadTool {
      */
     public UploadTool addUpload(BaseBeanInfo beanInfo) {
         if (uploadTasks == null) uploadTasks = new ArrayList<>();
-        if (TextUtils.isEmpty(beanInfo.getUrl()) && !TextUtils.isEmpty(beanInfo.getPath()) && new File(beanInfo.getPath()).exists()) {
+        if (TextUtils.isEmpty(beanInfo.getUrl()) && !TextUtils.isEmpty(beanInfo.getFilePath()) && new File(beanInfo.getFilePath()).exists()) {
             //可以下载
             //判断任务中是否已经存在
-            UploadTask uploadTask = checkExist(beanInfo.getPath());
+            UploadTask uploadTask = checkExist(beanInfo.getFilePath());
             if (uploadTask == null) {
                 uploadTasks.add(new UploadTask(beanInfo).setOnUploadListener(getUploadOneListener()));
             }
@@ -117,7 +117,7 @@ public class UploadTool {
         if (uploadTasks != null && uploadTasks.size() > 0) {
             for (int i = 0; i < uploadTasks.size(); i++) {
                 UploadTask uploadTask = uploadTasks.get(i);
-                if (all || TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath)) {
+                if (all || TextUtils.equals(uploadTask.getBeanInfo().getFilePath(), filePath)) {
                     if (uploadTask.getBeanInfo().getState() == BaseBeanInfo.STATE_PAUSED || uploadTask.getBeanInfo().getState() == BaseBeanInfo.STATE_ERROR) {
                         uploadTask.getBeanInfo().setState(BaseBeanInfo.STATE_WAITING);
                         uploadTasks.remove(i);
@@ -193,7 +193,7 @@ public class UploadTool {
                 UploadTask uploadTask = uploadTasks.get(i);
                 BaseBeanInfo beanInfo = uploadTask.getBeanInfo();
                 //全部暂停 或 符合条件的任务  执行暂停
-                boolean pause = pauseAll || (TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath));
+                boolean pause = pauseAll || (TextUtils.equals(uploadTask.getBeanInfo().getFilePath(), filePath));
                 //可以暂停的状态  STATE_WAITING / STATE_START / STATE_LOADING 其他状态不需要暂停  且不需要发送广播
                 if (pause && (beanInfo.getState() == BaseBeanInfo.STATE_WAITING || beanInfo.getState() == BaseBeanInfo.STATE_START || beanInfo.getState() == BaseBeanInfo.STATE_LOADING)) {
                     boolean executePause = uploadTask.pause();
@@ -219,7 +219,7 @@ public class UploadTool {
     private UploadTask checkExist(String path) {
         if (uploadTasks != null) {
             for (UploadTask task : uploadTasks) {
-                if (TextUtils.equals(task.getBeanInfo().getPath(), path))
+                if (TextUtils.equals(task.getBeanInfo().getFilePath(), path))
                     return task;
             }
         }
@@ -237,7 +237,7 @@ public class UploadTool {
         if (uploadTasks != null && uploadTasks.size() > 0) {
             for (int i = 0; i < uploadTasks.size(); i++) {
                 UploadTask uploadTask = uploadTasks.get(i);
-                if (TextUtils.equals(uploadTask.getBeanInfo().getPath(), filePath))
+                if (TextUtils.equals(uploadTask.getBeanInfo().getFilePath(), filePath))
                     return uploadTask;
             }
         }
@@ -330,14 +330,12 @@ public class UploadTool {
             }
 
             @Override
-            public String onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult) {
-                String url = null;
+            public void onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel) {
-                    url = selfUploadListener.onUploadSuccess(beanInfo, jsonResult);
+                    selfUploadListener.onUploadSuccess(beanInfo, jsonResult);
                 }
                 startOrNext();
-                return url;
             }
 
             @Override
@@ -354,7 +352,6 @@ public class UploadTool {
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadPaused(beanInfo);
                 startOrNext();
-
             }
         };
     }
@@ -392,10 +389,10 @@ public class UploadTool {
      */
     private void sendIntent(BaseBeanInfo mediaResBean, int state, int progress) {
         if (mediaResBean != null) mediaResBean.setState(state);
-        if (context == null || mediaResBean == null || TextUtils.isEmpty(mediaResBean.getPath()))
+        if (context == null || mediaResBean == null || TextUtils.isEmpty(mediaResBean.getFilePath()))
             return;
         Intent intent = new Intent();
-        intent.setAction(mediaResBean.getPath());
+        intent.setAction(mediaResBean.getFilePath());
         if (state == BaseBeanInfo.STATE_LOADING) {
             intent.putExtra(STR_STATE_PROGRESS, progress);
         }
@@ -430,12 +427,11 @@ public class UploadTool {
             }
 
             @Override
-            public String onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult) {
+            public void onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult) {
                 sendIntent(mediaResBean, BaseBeanInfo.STATE_SUCCESS);
                 if (onUploadListener != null) {
-                    return onUploadListener.onUploadSuccess(mediaResBean, jsonResult);
+                    onUploadListener.onUploadSuccess(mediaResBean, jsonResult);
                 }
-                return null;
             }
 
             @Override
@@ -504,7 +500,7 @@ public class UploadTool {
          * @param jsonResult
          * @return
          */
-        String onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult);
+        void onUploadSuccess(BaseBeanInfo mediaResBean, String jsonResult);
 
         /**
          * 上传失败
