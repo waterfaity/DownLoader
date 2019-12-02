@@ -318,19 +318,19 @@ public class UploadTool {
     private UploadTask.OnUploadListener getUploadOneListener() {
         return new UploadTask.OnUploadListener() {
             @Override
-            public void onLoadStart(BaseBeanInfo beanInfo) {
+            public void onUploadStart(BaseBeanInfo beanInfo) {
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadStart(beanInfo);
             }
 
             @Override
-            public void onLoadProgress(BaseBeanInfo beanInfo) {
+            public void onUploadProgress(BaseBeanInfo beanInfo) {
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploading(beanInfo);
             }
 
             @Override
-            public void onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult) {
+            public void onUploadSuccess(BaseBeanInfo beanInfo, String jsonResult) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel) {
                     selfUploadListener.onUploadSuccess(beanInfo, jsonResult);
@@ -339,7 +339,7 @@ public class UploadTool {
             }
 
             @Override
-            public void onLoadError(BaseBeanInfo beanInfo, String resultData) {
+            public void onUploadError(BaseBeanInfo beanInfo, String errMsg) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadError(beanInfo);
@@ -347,7 +347,7 @@ public class UploadTool {
             }
 
             @Override
-            public void onLoadPaused(BaseBeanInfo beanInfo) {
+            public void onUploadPaused(BaseBeanInfo beanInfo) {
                 currentProgressNum--;
                 if (selfUploadListener != null && !callCancel)
                     selfUploadListener.onUploadPaused(beanInfo);

@@ -1,6 +1,7 @@
 package com.waterfairy.downloader.upload;
 
 import android.os.AsyncTask;
+import android.text.Html;
 
 import com.waterfairy.downloader.base.BaseBeanInfo;
 import com.waterfairy.downloader.base.ProgressBean;
@@ -9,6 +10,8 @@ import com.waterfairy.downloader.base.RetrofitRequest;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 
 import okhttp3.MediaType;
@@ -46,52 +49,65 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
 
     @Override
     protected ProgressBean doInBackground(BaseBeanInfo... beanInfos) {
-        ProgressBean progressBean = null;
-
+        ProgressBean progressBean;
         beanInfo.setState(BaseBeanInfo.STATE_LOADING);
+
+        //retrofitService
+        UploadService uploadService = RetrofitRequest.getInstance().getUploadRetrofit();
+
+        //添加file
         File file = new File(beanInfo.getFilePath());
         RequestBody sourceBody = RequestBody.create(MediaType.parse("application/otcet-stream"), file);
         UploadRequestBody uploadRequestBody = new UploadRequestBody(sourceBody, beanInfo, new ProgressListener() {
             @Override
             public void onProgressing(BaseBeanInfo beanInfo, long total, long current) {
+                //上传进度
                 publishProgress(new ProgressBean(ProgressBean.STATE_PROGRESS, beanInfo));
             }
         });
-        MultipartBody.Part filePart = MultipartBody.Part.createFormData(
-                "file",
-                file.getName(),
-                uploadRequestBody);
-        UploadService uploadService = RetrofitRequest.getInstance().getUploadRetrofit();
-
-        HashMap<String, String> paramsHashMap = beanInfo.getParamsHashMap();
-
-        if (beanInfo.getCurrentLength() != 0) {
-            if (paramsHashMap != null) {
-                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), paramsHashMap, filePart);
-            } else {
-                call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
-            }
-        } else {
-            if (paramsHashMap != null) {
-                call = uploadService.upload(beanInfo.getUploadUrl(), paramsHashMap, filePart);
-            } else {
-                call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
-            }
-        }
+        MultipartBody.Part filePart;
         try {
-            //启动下载
-            Response<ResponseBody> response = call.execute();
-            //下载结束
-            progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(response.code()).setResultData(response.body().string());
-        } catch (IOException e) {
-            e.printStackTrace();
-            //下载异常
-            if (isPaused) {
-                progressBean = new ProgressBean(ProgressBean.STATE_PAUSED, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("暂停下载");
+            filePart = MultipartBody.Part.createFormData(
+                    "file",
+                    URLEncoder.encode(file.getName(), "utf-8"),
+                    uploadRequestBody);
+
+            //添加参数 (如果paramsHashMap 不为null)
+            HashMap<String, String> paramsHashMap = beanInfo.getParamsHashMap();
+
+            if (beanInfo.getCurrentLength() != 0) {
+                if (paramsHashMap != null) {
+                    call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), paramsHashMap, filePart);
+                } else {
+                    call = uploadService.upload(beanInfo.getUploadUrl(), "bytes=" + beanInfo.getCurrentLength() + "-" + beanInfo.getTotalLength(), filePart);
+                }
             } else {
-                progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("未知异常");
+                if (paramsHashMap != null) {
+                    call = uploadService.upload(beanInfo.getUploadUrl(), paramsHashMap, filePart);
+                } else {
+                    call = uploadService.upload(beanInfo.getUploadUrl(), filePart);
+                }
             }
+            try {
+                //启动下载
+                Response<ResponseBody> response = call.execute();
+                //下载结束
+                progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(response.code()).setResultData(response.body().string());
+            } catch (IOException e) {
+                e.printStackTrace();
+                //下载异常
+                if (isPaused) {
+                    progressBean = new ProgressBean(ProgressBean.STATE_PAUSED, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("暂停下载");
+                } else {
+                    progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("未知异常");
+                }
+            }
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            progressBean = new ProgressBean(ProgressBean.STATE_RESULT, beanInfo).setResultCode(BaseBeanInfo.ERROR_CODE).setResultData("文件名转码错误");
         }
+
         return progressBean;
     }
 
@@ -105,14 +121,14 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
                 //下载失败  1:暂停;2:失败
                 if (progressBean.getState() == ProgressBean.STATE_PAUSED) {
                     progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_PAUSED);
-                    onUploadListener.onLoadPaused(beanInfo);
+                    onUploadListener.onUploadPaused(beanInfo);
                 } else {
                     progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_LOADING);
-                    onUploadListener.onLoadError(beanInfo, progressBean.getResultData());
+                    onUploadListener.onUploadError(beanInfo, progressBean.getResultData());
                 }
             } else {
                 //下载成功
-                onUploadListener.onLoadSuccess(beanInfo, progressBean.getResultData());
+                onUploadListener.onUploadSuccess(beanInfo, progressBean.getResultData());
             }
         }
     }
@@ -124,10 +140,10 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
         if (onUploadListener != null) {
             if (beanInfo.getState() == ProgressBean.STATE_PROGRESS) {
                 //下载进度
-                onUploadListener.onLoadProgress(beanInfo.getBeanInfo());
+                onUploadListener.onUploadProgress(beanInfo.getBeanInfo());
             } else if (beanInfo.getState() == ProgressBean.STATE_START) {
                 //下载开始
-                onUploadListener.onLoadStart(beanInfo.getBeanInfo());
+                onUploadListener.onUploadStart(beanInfo.getBeanInfo());
             }
         }
     }
@@ -193,15 +209,15 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
 
 
     public interface OnUploadListener {
-        void onLoadStart(BaseBeanInfo beanInfo);
+        void onUploadStart(BaseBeanInfo beanInfo);
 
-        void onLoadProgress(BaseBeanInfo beanInfo);
+        void onUploadPaused(BaseBeanInfo beanInfo);
 
-        void onLoadSuccess(BaseBeanInfo beanInfo, String jsonResult);
+        void onUploadProgress(BaseBeanInfo beanInfo);
 
-        void onLoadError(BaseBeanInfo beanInfo, String resultData);
+        void onUploadSuccess(BaseBeanInfo beanInfo, String jsonResult);
 
-        void onLoadPaused(BaseBeanInfo beanInfo);
+        void onUploadError(BaseBeanInfo beanInfo, String errMsg);
     }
 
 }
