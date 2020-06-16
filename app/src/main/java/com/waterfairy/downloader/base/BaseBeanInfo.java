@@ -10,7 +10,6 @@ import java.util.HashMap;
  */
 public class BaseBeanInfo {
 
-
     public static final int ERROR_CODE = 10001;//执行retrofit的时候出的异常
 
     public static final int STATE_WAITING = 0;
