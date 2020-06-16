@@ -1,7 +1,5 @@
 package com.waterfairy.downloader.base;
 
-import android.text.TextUtils;
-
 import java.util.HashMap;
 
 /**
@@ -26,6 +24,7 @@ public class BaseBeanInfo {
     private Object object;
     private String errMsg;
     private int state;
+    private boolean isPost=false;
     private HashMap<String, String> paramsHashMap;
 
     public HashMap<String, String> getParamsHashMap() {
@@ -34,6 +33,14 @@ public class BaseBeanInfo {
 
     public void setParamsHashMap(HashMap<String, String> paramsHashMap) {
         this.paramsHashMap = paramsHashMap;
+    }
+
+    public boolean isPost() {
+        return isPost;
+    }
+
+    public void setPost(boolean post) {
+        isPost = post;
     }
 
     public String getErrMsg() {

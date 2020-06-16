@@ -7,6 +7,8 @@ import com.waterfairy.downloader.upload.UploadService;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 
@@ -46,6 +48,7 @@ public class RetrofitRequest {
 
     private Retrofit buildClient(DownloadInterceptor downloadInterceptor) {
         OkHttpClient.Builder okHttpClient = new OkHttpClient().newBuilder();
+        okHttpClient.sslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
         okHttpClient.connectTimeout(15000, TimeUnit.MILLISECONDS);
         okHttpClient.readTimeout(15000, TimeUnit.MILLISECONDS);
         if (downloadInterceptor != null)

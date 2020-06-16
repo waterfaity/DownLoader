@@ -123,7 +123,7 @@ public class UploadTask extends AsyncTask<BaseBeanInfo, ProgressBean, ProgressBe
                     progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_PAUSED);
                     onUploadListener.onUploadPaused(beanInfo);
                 } else {
-                    progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_LOADING);
+                    progressBean.getBeanInfo().setState(BaseBeanInfo.STATE_ERROR);
                     onUploadListener.onUploadError(beanInfo, progressBean.getResultData());
                 }
             } else {

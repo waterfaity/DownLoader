@@ -47,7 +47,6 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
         DownloadService downloadService = RetrofitRequest.getInstance().getDownloadRetrofit(beanInfo, new ProgressListener() {
             @Override
             public void onProgressing(BaseBeanInfo beanInfo, long total, long current) {
-
                 publishProgress(new ProgressBean(ProgressBean.STATE_PROGRESS, beanInfo));
             }
         });
@@ -55,7 +54,11 @@ public class DownloadTask extends AsyncTask<BaseBeanInfo, ProgressBean, Progress
         boolean success = true;
         String msg = null;
         try {
-            call = downloadService.download(rangeHeader, beanInfo.getUrl());
+            if (beanInfo.isPost()) {
+                call = downloadService.downloadPost(rangeHeader, beanInfo.getUrl());
+            } else {
+                call = downloadService.download(rangeHeader, beanInfo.getUrl());
+            }
             Response<ResponseBody> execute = call.execute();
             int code = execute.code();
             if (code != 404) {
